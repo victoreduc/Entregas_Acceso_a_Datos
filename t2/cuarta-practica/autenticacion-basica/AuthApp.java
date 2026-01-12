@@ -1,8 +1,10 @@
-package com.example;
+package entrega4.autenticacionbasica;
 
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
+
+import io.javalin.http.UnauthorizedResponse;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -97,19 +99,16 @@ public class AuthApp {
         String token = ctx.header("Authorization");
 
         if (token == null) {
-            ctx.status(HttpStatus.UNAUTHORIZED).json(Map.of("error", "No autorizado. Token requerido"));
-            // .cancel() detiene la cadena de ejecución para que no llegue al endpoint
-            ctx.skipRemainingHandlers(); // En versiones nuevas de Javalin esto evita seguir al endpoint
-            return;
+            throw new UnauthorizedResponse("No autorizado. Token requerido");
         }
 
         String usernameValidado = validarToken(token);
 
+        // Validar si el token es correcto
         if (usernameValidado == null) {
-            ctx.status(HttpStatus.UNAUTHORIZED).json(Map.of("error", "Token inválido o expirado"));
-            ctx.skipRemainingHandlers();
+            throw new UnauthorizedResponse("Token inválido o expirado");
         } else {
-            // Guardamos el usuario en el contexto para usarlo en el endpoint final si fuera necesario
+            // Token válido: guardamos el usuario y continuamos
             ctx.attribute("username", usernameValidado);
         }
     }
@@ -143,7 +142,7 @@ public class AuthApp {
      */
     public static void obtenerPerfil(Context ctx) {
         // Como ya pasó por "verificarAutenticacion", sabemos que el token es válido.
-        // Podríamos recuperar el usuario del atributo seteado en el middleware:
+        // Podríamos recuperar el usuario del atributo seteado:
         // String username = ctx.attribute("username");
         
         // Pero siguiendo la firma estricta del ejercicio, lo extraemos del header nuevamente:
